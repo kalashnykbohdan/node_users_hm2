@@ -1,13 +1,6 @@
 const Joi = require('joi');
 
-const users = [
-    {
-        id: 1,
-        name: 'Richard',
-        email: 'richard@gmail.com',
-        password: "qwerty"
-    }
-];
+const users = require('../users.json');
 
 class UserController {
 
@@ -23,13 +16,13 @@ class UserController {
 
     // ----------------------Read
 
-    getUsers(req, res, next){
+    async getUsers(req, res, next){
         return res.json(users);
     }
 
     // ---------------------Create
 
-    _createUser(req, res, next) {
+    async _createUser(req, res, next) {
 
         const newUser = {
             ...req.body,
@@ -61,7 +54,8 @@ class UserController {
 
     //------------------------Update
 
-    _updateUser(req, res, next){
+    async _updateUser(req, res, next){
+        try{
             const targerUserIndex = this.findUserIndexById(res, req.params.id);
     
             users[targerUserIndex] = {
@@ -72,6 +66,10 @@ class UserController {
             console.log(users,'users');
     
             return res.status(200).send("Update completed");
+        } catch(err){
+            err.status = 404;
+            next(err);
+        }
 
     }
 
@@ -94,14 +92,19 @@ class UserController {
 
     //------------------------Delete
 
-    _deleteUser(req, res, next){
-        const targerUserIndex = this.findUserIndexById(res, req.params.id);
+    async _deleteUser(req, res, next){
+        try{
+            const targerUserIndex = this.findUserIndexById(res, req.params.id);
 
-        users.splice(targerUserIndex, 1);
+            users.splice(targerUserIndex, 1);
 
-        console.log(users,'users');
+            console.log(users,'users');
 
-        return res.status(200).send("User deleted");
+            return res.status(200).send("User deleted");
+
+        } catch(err){
+            next(err);
+        }
     }
 
     findUserIndexById(res, userId){

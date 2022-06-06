@@ -1,0 +1,74 @@
+const express = require("express");
+const Joi = require("joi");
+const dotenv = require("dotenv")
+const fetch = require("node-fetch");
+const cors = require("cors");
+
+const PORT = 3000 || process.env.PORT;
+dotenv.config();
+ 
+const app = express();
+
+app.use(express.json());
+app.use(cors({ origin: "http://localhost:3000" }));
+
+const params = 'windSpeed';
+
+app.get("/weather",
+    validateWeatherQueryParams, 
+    getWeather,
+);
+
+function validateWeatherQueryParams(req, res, next){
+    const weatherRules = Joi.object({
+        lat: Joi.string().required(),
+        lng: Joi.string().required(),
+    });
+
+    const validationResult = weatherRules.validate(req.query);
+    console.log(validationResult, "validationResult");
+
+    if(validationResult.error){
+        return res.status(400).send(validationResult.error);
+    }
+    next();
+}
+async function getWeather(req, res, next){
+    console.log("getWeather");
+    const { lat, lng } = req.query;
+    
+    const response = await fetch(`https://api.stormglass.io/v2/weather/point?lat=${lat}&lng=${lng}&params=${params}`,{
+        headers: {'Authorization': process.env.WEATHER_STACK_API_SECRET_KEY}
+    });
+
+    const responceBody = await response.json();
+
+    if(responceBody.error){
+        return res.status(responceBody.code).send(responceBody.error);
+    }
+
+    return res.status(200).send(responceBody);
+
+}
+
+function addAllowOriginHeader(req, res, next){
+    res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+    next();
+}
+
+function addCorsHeaders(req, res, next){
+    res.set('Access-Control-Allow-Methods', req.headers['access-control-request-method']);
+    res.set('Access-Control-Allow-Methods', req.headers['access-control-request-headers']);
+
+    res.status(200).send();
+    next();
+}
+
+app.listen(PORT, () => {
+    console.log("Started listening on port", PORT);
+})
+
+
+WEATHER_STACK_API_SECRET_KEY=7797fd92-e05f-11ec-bcd6-0242ac130002-7797fe00-e05f-11ec-bcd6-0242ac130002
+PORT=3000
